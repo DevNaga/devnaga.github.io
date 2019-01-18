@@ -2,8 +2,8 @@
 title: Hello!
 email: devendra.aaru@gmail.com
 description: # this means to ignore newlines until "baseurl:"
-    I am DevNaga, a programmer, gamer and an introvert.
-url: "http://devnaga.github.io" # the base hostname & protocol for your site
+    I am DevNaga, a programmer, gamer and an introvert. My resume is [here](https://github.com/devnaga/site)
+url: "https://devnaga.github.io" # the base hostname & protocol for your site
 twitter_username: ""
 github_username:  devnaga
 
