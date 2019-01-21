@@ -138,3 +138,37 @@ if (it != ints.end()) {
 
 the `std::find` returns an iterator. An `ints.end()` mean that no elements been found.
 
+The elements never to be deleted inside a vector iteration. Such as the following,
+
+```cpp
+std::vector<int>::iterator it;
+int search_key = 81;
+
+for (it = ints.begin(); it != ints.end(); it ++) {
+    if (*it == search_key) {
+        vector.erase(it);
+    }
+}
+
+```
+
+results in a crash, because the iterator is deleted once the value is found and is incremented in the next step after the deletion.
+
+The safest way to delete an element in the vector is to search and find the element, then delete it. Both in two steps.
+
+```cpp
+
+//search an element
+
+std::vector<int>::iterator it;
+int search_key = 81;
+
+it = std::find(ints.begin(), ints.end(), search_key);
+if (it != ints.end()) {
+    ints.erase(it); // remove the element
+}
+
+```
+
+The above operation involve finding the element with `std::find` and once an iterator is found, it is then used for deletion with the `erase` member function.
+
