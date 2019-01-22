@@ -7,7 +7,7 @@ categories: cryptography
 
 On the path towards learning OpenSSL fully and to complete some of my own [EDGEOS](https://github.com/devnaga/edgemw) project features, i have encountered RSA Signatures.
 
-To perform any signing or verification project, it would require keys. RSA being the PKI, involve generating keypairs, Public and private.
+To perform any asymmetric signing or verification, it would require keys. RSA being the PKI, involve generating keypairs, Public and private.
 
 OpenSSL library's EVP interface provides helper functions to generate keypairs.
 
@@ -15,7 +15,7 @@ to do this include `openssl/evp.h` and `openssl/rsa.h`.
 
 Below are the full steps involved.
 
-1. create new EVP_KEY_CTX for RSA.
+### create new EVP_KEY_CTX for RSA.
 
 ```c
 EVP_PKEY_CTX *ctx;
@@ -30,7 +30,7 @@ if (!ctx) {
 
 this creates a context that is used later in the keygen 
 
-2. setup keygen context
+### setup keygen context
 
 ```c
 int ret;
@@ -42,7 +42,7 @@ if (ret != 1) {
 
 ```
 
-3. set RSA keygen bits. RSA algorithm support key lengths of 1024, 2048, 3072 and 4096 bits.
+### set RSA keygen bits. RSA algorithm support key lengths of 1024, 2048, 3072 and 4096 bits.
 
 ```c
 int ret;
@@ -54,7 +54,7 @@ if (ret != 1) {
 
 ```
 
-4. generate key
+### generate key
 
 ```c
 EVP_PKEY *key;
@@ -71,7 +71,7 @@ If everything is ok, then the keys are generated in the key obj.
 
 Writing to the file is as simple as using the PEM API. For this use `openssl/pem.h`
 
-1. Write private and public key
+### Write private and public key
 
 ```c
 int ret;
