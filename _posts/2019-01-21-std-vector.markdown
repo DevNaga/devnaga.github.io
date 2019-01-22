@@ -83,6 +83,32 @@ an iterator for a vector is declared as follows.
 std::vector<int>::iterator it;
 ```
 
+An iterator is usually assigned to `begin()` member function but it can point to `end()` sometimes (cases when a search query on an `std::vector` might return `end()` if the search couldn't find the element.
+
+Like so,
+
+```cpp
+std::vector<int>::iterator it;
+
+it = ints.begin(); // set it to the beginning of the iterator list
+```
+
+A reverse iterator is used for traversing the list in reverse, it is called `reverse_iterator` and is declared as follows.
+
+```cpp
+std::vector<int>::reverse_iterator rit;
+```
+
+A `reverse_iterator` is assigned to `rbegin()` member function.
+
+Like so,
+
+```cpp
+std::vector<int>::reverse_iterator rit;
+
+rit = ints.rbegin(); // set rit to the beginning of the list that iterates in reverse
+```
+
 dereferencing the iterator gives the actual content. The same above program can be written as,
 
 ```cpp
@@ -103,6 +129,12 @@ int main()
     for (it = ints.begin(); it != ints.end(); it ++) {
         std::cerr << "vector<int> -> " << *it << std::endl;
     }
+    
+    std::vector<int>::reverse_iterator rit;
+    
+    for (rit = ints.rbegin(); rit != ints.rend(); rit ++) {
+        std::cerr << "vector<int> (r) -> " << *rit << std::endl;
+    }
 
     return 0;
 }
@@ -110,6 +142,15 @@ int main()
 ```
 
 The above shows the iterator being assigned to the `begin()` and checked for end of vector as `it != ints.end()` and incremented with `++` operator. `end()` points to the end of the vector. Dereferencing the iterator gives the value at the index location.
+
+With C++-11 and above, the iterator can simply be defined as 
+
+```cpp
+for (auto it = ints.begin(); it != ints.end(); it ++) {
+   std::cerr << *it << std::endl;
+}
+
+```
 
 
 The value at the iterator location can be accessed with an integer variable as,
@@ -171,4 +212,75 @@ if (it != ints.end()) {
 ```
 
 The above operation involve finding the element with `std::find` and once an iterator is found, it is then used for deletion with the `erase` member function.
+
+`std::vector` erase is an overloaded member function. It can either accept a single iterator, that means a position in the vector to delete or a range of iterators in the order.
+
+The prototype of the `erase` might look like as follows,
+
+```cpp
+iterator erase(iterator it);
+iterator erase(iterator begin, iterator end);
+```
+
+Returning a vector from a function is similar to returning any other object. It can be returned as a pointer or a value. Below example shows both return types.
+
+
+```cpp
+#include <iostream>
+#include <vector>
+
+std::vector<int> returns_ints()
+{
+    std::vector<int> a;
+    int i;
+
+    for (i = 0; i < 100; i ++) {
+        a.push_back(i);
+    }
+
+    return a;
+}
+
+std::vector<int>* returns_intptr()
+{
+    std::vector<int> *a;
+    int i;
+
+    a = new std::vector<int>;
+
+    for (i = 0; i < 100; i ++) {
+        a->push_back(i);
+    }
+
+    return a;
+}
+
+int main()
+{
+    std::vector<int> a, *b;
+
+    a = returns_ints();
+    b = returns_intptr();
+
+    std::vector<int>::iterator it;
+
+    for (it = a.begin(); it != a.end(); it ++) {
+        std::cerr << *it << std::endl;
+    }
+
+    for (it = b->begin(); it != b->end(); it ++) {
+        std::cerr << *it << std::endl;
+    }
+
+    delete b;
+}
+
+```
+
+While the compiler (in this case i have tried the g++) optimises away the cost of returning a value over the pointer, it is usually not recommended to return any pointers (which may be allocated), due to the possibility of a memory leak when not freed or not defined who's job to free it (Caller's or called functions.. ).
+
+
+This post isn't complete yet.. More to come .. stay tuned..
+
+
 
