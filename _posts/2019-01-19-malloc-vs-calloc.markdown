@@ -41,30 +41,8 @@ static struct linked_list *head, *tail;
 
 Below function shows the addition of an element at the end of the list.
 
-```c
-int list_add_tail(void *data)
-{
-    struct linked_list *t;
+<script src="https://gist.github.com/DevNaga/65f16a921006d61a81384724f5be87d8.js"></script>
 
-    t = malloc(sizeof(struct linked_list));
-    if (!t) {
-        return -1;
-    }
-
-    t->data = data;
-
-    if (!head) { // no head element yet..
-        head = t;
-        tail = t;
-    } else { // add it at the tail..
-        tail->next = t;
-        tail = t;
-    }
-
-    return 0;
-}
-
-```
 
 and the list can be iterated using the `next` pointer till the `NULL` or the end of the list.
 
