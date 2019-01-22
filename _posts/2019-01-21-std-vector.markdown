@@ -109,6 +109,27 @@ std::vector<int>::reverse_iterator rit;
 rit = ints.rbegin(); // set rit to the beginning of the list that iterates in reverse
 ```
 
+There is a `const_iterator` that allows constant iteration through the vector. An iterator of type `const_iterator` can be declared as,
+
+```cpp
+std::vector<int>::const_iterator cit;
+
+cit = ints.begin();
+```
+
+As the name implies, setting a value to the cit results in a compiler error.
+
+```cpp
+std::vector<int>::const_iterator cit;
+
+cit = ints.begin();
+
+*cit = 4; // this line results in a compiler error
+
+```
+
+
+
 dereferencing the iterator gives the actual content. The same above program can be written as,
 
 ```cpp
@@ -158,6 +179,17 @@ The value at the iterator location can be accessed with an integer variable as,
 ```cpp
 for (it = ints.begin(); it != ints.end(); it ++) {
    int var = *it;
+}
+
+```
+
+If the values at the iterator positions need change, they can be simply changed as by dereferencing the iterator and setting it a value.
+
+```cpp
+std::vector<int>::iterator it;
+
+for (it = ints.begin(); it != ints.end(); it ++) {
+    *it = 4;
 }
 
 ```
