@@ -101,6 +101,23 @@ So coming back to the main problem, the event driven TCP server with `select` an
 
 <script src="https://gist.github.com/DevNaga/293137c98ba4e913cfb242ba1e0cb932.js"></script>
 
+A `select_class` is created for the following purposes.
+
+1. adding and removing socket descriptors
+2. waiting for connections
+
+A `tcp_server` class is created for the following purposes.
+
+1. create server socket.
+2. wait and accept new connections and store them.
+3. receive and dump connection data on the screen.
+
+the function pointer registration (aka using `std::bind`) is performed at the `tcp_server` class and given to the `select_class` as a `callback_data` containing the function of type `std::function<void(callback_data)>`.
+
+`select` then waits on all the file descriptors added via the `add_fd` mem function. If any fd is set, the callback of that particular fd is known by iterating via the callback vectors and is called. The client connected to the server via `accept` is then added to the filedescr set `allfd` via `add_fd` call to make the client wait as well.
+
+If a client closes the connection the `recv` call return 0 or less than 0 and the connection is then removed with the call to `rem_fd` mem function.
+
 I use `nc` on linux to test the server with `echo "Hello server" | nc 127.0.0.1 1244` to see if server accepts and dumps the client data on the screen.
 
 
