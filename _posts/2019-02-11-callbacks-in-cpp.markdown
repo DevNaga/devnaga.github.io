@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "calling a member function of a class in C++ via a generic callback"
-date:   2019-1-22 23:26:00
+date:   2019-2-11 23:26:00
 categories: cryptography
 ---
 
