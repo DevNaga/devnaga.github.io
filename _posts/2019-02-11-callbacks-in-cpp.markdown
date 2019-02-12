@@ -112,7 +112,7 @@ A `tcp_server` class is created for the following purposes.
 2. wait and accept new connections and store them.
 3. receive and dump connection data on the screen.
 
-the function pointer registration (aka using `std::bind`) is performed at the `tcp_server` class and given to the `select_class` as a `callback_data` containing the function of type `std::function<void(callback_data)>`.
+the function pointer registration (aka using `std::bind`) is performed at the `tcp_server` class and given to the `select_class` as a `callback_data` containing the function of type `std::function<void(callback_data)>`.. The tcp server needs to accept client connections, that means the server needs to be notified for the connections upon a new connection event, that means the accept must be called from a callback and thus registered to the `select_class` in the `add_fd`. The same goes with every client connection that is accepted via the `accept`. The private data for each function is captured into the `ptr` member of the `callback_data` struct.
 
 `select` then waits on all the file descriptors added via the `add_fd` mem function. If any fd is set, the callback of that particular fd is known by iterating via the callback vectors and is called. The client connected to the server via `accept` is then added to the filedescr set `allfd` via `add_fd` call to make the client wait as well.
 
