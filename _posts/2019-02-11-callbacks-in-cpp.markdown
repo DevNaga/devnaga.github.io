@@ -94,7 +94,7 @@ cb(3);
 
 More illustrative example is below.
 
-https://gist.github.com/DevNaga/fbafa4d15cbcf1ebc816e6f136b2790c
+<script src="https://gist.github.com/DevNaga/fbafa4d15cbcf1ebc816e6f136b2790c.js"></script>
 
 
 So coming back to the main problem, the event driven TCP server with `select` and friends that can be done with callbacks in C, can be done the same way in C++ using `std::function` and `std::bind` in the below example.
