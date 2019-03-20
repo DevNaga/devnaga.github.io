@@ -69,5 +69,11 @@ float lpf(double signal_data, double prev_data)
 ```
  
 
+Some images for the readers,
+
+![Original input](./original data.png)
+![output after LPF](./LPF applied.png)
+
+
 
 
