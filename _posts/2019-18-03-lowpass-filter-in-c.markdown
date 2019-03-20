@@ -71,8 +71,8 @@ float lpf(double signal_data, double prev_data)
 
 Some images for the readers,
 
-![Original input](./original data.png)
-![output after LPF](./LPF applied.png)
+![Original input](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/original%20data.png)
+![output after LPF](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/LPF%20applied.png)
 
 
 
