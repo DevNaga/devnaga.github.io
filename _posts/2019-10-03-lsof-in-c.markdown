@@ -9,7 +9,7 @@ sometimes, it is necessary to know all the files that are currently in use by a 
 
 Situation arises to not touch those files / write / delete them at any point and wait till some action is complete on the files.
 
-so, there is a command `lsof` which does know all the opened files by a current process. So how does it do ? well, reading the `/proc/pid/fd`.
+so, there is a command `lsof` which knows all the opened files by a current process. So how does it do ? well, reading the `/proc/pid/fd`.
 
 the proc file system exposes various information about a process that is currently running in the system. It also contains the number of opened files currently by a process.
 
