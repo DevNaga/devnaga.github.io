@@ -1,0 +1,89 @@
+---
+layout: post
+title:  "find all the files currently in use by a process (in linux)"
+date:   2019-3-10 23:26:00
+categories: technology, c, linux, system programming
+---
+
+sometimes, it is necessary to know all the files that are currently in use by a process / or by a specific list of processes.
+
+Situation arises to not touch those files / write / delete them at any point and wait till some action is complete on the files.
+
+so, there is a command `lsof` which knows all the opened files by a current process. So how does it do ? well, reading the `/proc/pid/fd`.
+
+the proc file system exposes various information about a process that is currently running in the system. It also contains the number of opened files currently by a process.
+
+lets' say that the current program is `bash`. On my host computer, 
+
+```bash
+dev@dev-MacBookPro:~/oslab/edge_sdk$ ps
+  PID TTY          TIME CMD
+ 1331 pts/0    00:00:08 bash
+20728 pts/0    00:00:00 ps
+```
+
+The `bash` has pid of 1331. Doing `ls -l /proc/1331/fd` reveals the following information.
+
+
+```bash
+dev@dev-MacBookPro:~/oslab/edge_sdk$ ls -l /proc/1331/fd/
+total 0
+lrwx------ 1 dev dev 64 Mar 21 08:10 0 -> /dev/pts/0
+lrwx------ 1 dev dev 64 Mar 21 08:10 1 -> /dev/pts/0
+lrwx------ 1 dev dev 64 Mar 21 08:10 2 -> /dev/pts/0
+lrwx------ 1 dev dev 64 Mar 21 08:10 255 -> /dev/pts/0
+```
+
+the file descriptors 0, 1, and 2 points to the `stdin`, `stdout` and `stderr` respectively. The command `ls -l` reads through the symlink and details the full file name.
+
+So, how do we do programmatically ?
+
+We need to do the following,
+
+1. open directory (aka, `opendir`) /proc/pid/fd. pid must be known.
+2. read directory (aka, `readdir`), skip all the `.` and `..` directories.
+3. perform `readlink` call on each file name that's read.
+4. check if its not a directory, and store / print the contents.
+
+
+Below is an example:
+
+<script src="https://gist.github.com/DevNaga/1b54507c972ea62f7cb34a86aa2859eb.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
