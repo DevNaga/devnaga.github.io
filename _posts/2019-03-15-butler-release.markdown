@@ -208,7 +208,8 @@ support is missing for `.csr` generation, validation. It is missing support for 
 
 
 1. clone: `git clone https://github.com/DevNaga/butler`
-2. install:
+2. checkout: `git checkout v1`
+3. install:
     1. `./build.sh make_release`.
 
             This creates `butler_release-v0.1-alpha.tar`
