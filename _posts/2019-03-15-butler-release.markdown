@@ -5,10 +5,10 @@ date:   2019-03-15 23:26:00
 categories: networking, cryptography, IOT, embedded, security
 ---
 
-Version 1 of Butler released.
+Version 1 of [Butler](https://github.com/devnaga/butler) released.
 
 
-[Butler](https://github.com/DevNaga/butler) is a high performance middleware stack for embedded devices that talk to the cloud for various applications. These type of devices usually are IoT devices and Edge devices ranging with hardware characteristics of 52MB RAM to 4 GBs of RAM.
+[Butler](https://github.com/DevNaga/butler) is a high performance middleware stack for embedded devices that talk to the cloud for various applications. These type of devices usually are **IoT** devices and **Edge** devices ranging with hardware characteristics of 52MB RAM to 4 GBs of RAM.
 
 I will describe below the software features and details of the butler software stack.
 
@@ -18,6 +18,8 @@ Below show a diagram of the butler middleware.
 
 
 The architecture contains a butler middleware framework library below abstracting the OS and posix System calls. The users of this layer are the `storage`, `monitoring` and `DLM` modules.
+
+Version 1 does not really have the OS abstraction and it only support Linux as of this release.
 
 Storage, Monitoring and DLM are right now not supported and in very early stages. I am writing software for them.
 
@@ -203,6 +205,22 @@ The following crypto operations are supported.
 
 support is missing for `.csr` generation, validation. It is missing support for `X509` API.
 
+Examples of the crypto API usage is described here.
+
+**Hashing**
+
+```cpp
+uint8_t data[] = "example crypto library";
+uint8_t hash_sha2[32];
+int ret;
+
+ret = btlr_crypto_sha256(data, sizeof(data), hash_sha2);
+if (ret < 0) {
+    return;
+}
+
+btlr_hexdump("sha2", hash_sha2, sizeof(hash_sha2));
+```
 
 ## Building and installing
 
