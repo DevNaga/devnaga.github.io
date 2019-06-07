@@ -30,10 +30,10 @@ int do_some_job(struct input_data *_in, struct output_data *_out)
 
 the above function returns the status as well has the output data to `_out`.
 
-This is perfectly valid and holds good in cases where the object 
+This is perfectly valid and general practise in most of the code bases i have seen in open source software. Just making sure that only this function can access the `_out` for writing is the important thing here. After all, in a multi threaded program, care must be given for data separation and allocation for each functionality , this is where C++ classes show their importance.
 
 
-So, if we still wanna do, we could do with a structure that can wrap the variables in. However, this means that the structure to be allocated on heap in order to be thread safe. Having static data types mean, there is always a problem hiding behind the "state" when not managed. Add to that, the thread safety.
+So, if we still wanna do, we could do with returning a structure that can wrap the variables in. However, this means that the structure to be allocated on heap in order to be thread safe. Having static data types mean, there is always a problem hiding behind the "state" when not managed. Add to that, the thread safety.
 
 Another way to do is, use `std::pair` in C++. Let's have a look here.
 
