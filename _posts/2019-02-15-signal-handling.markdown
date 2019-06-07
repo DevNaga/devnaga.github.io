@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Signal handling"
-date:   2019-05-14 23:26:00
+date:   2019-06-01 23:26:00
 categories: language, c++
 ---
 
@@ -65,5 +65,34 @@ Now, the signal handler code starts touching the data member, and now we have ra
 Lets look at the `sigprocmask` below.
 
 ```c
-int 
+
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+
+```
+
+How is one of the following:
+
+```c
+
+SIG_BLOCK
+SIG_UNBLOCK
+
+```
+
+the `set` is of `sigset_t` which can be set with the `sigfillset` - fills all the signals (although `SIGKILL` cannot be masked and triggers a default program termination), thus the call to the `sigprocmask` involve the following.
+
+```cpp
+
+sigset_t mask;
+
+sigfillset(&mask);
+
+sigprocmask(SIG_BLOCK, &mask, nullptr);
+
+.. critical section ..
+
+sigprocmask(SIG_UNBLOCK, &mask, nullptr);
+
+```
+
 
