@@ -30,7 +30,7 @@ int do_some_job(struct input_data *_in, struct output_data *_out)
 
 the above function returns the status as well has the output data to `_out`.
 
-This is perfectly valid and holds good in cases of 
+This is perfectly valid and holds good in cases where the object 
 
 
 So, if we still wanna do, we could do with a structure that can wrap the variables in. However, this means that the structure to be allocated on heap in order to be thread safe. Having static data types mean, there is always a problem hiding behind the "state" when not managed. Add to that, the thread safety.
