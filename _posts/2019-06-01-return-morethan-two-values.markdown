@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Return more than one value from a C++ function"
-date:   2019-05-14 23:26:00
+date:   2019-06-1 23:26:00
 categories: language, c++
 ---
 
