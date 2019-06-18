@@ -1,0 +1,173 @@
+---
+layout: post
+title:  "Introduction to PBKDF2"
+date:   2019-06-14 23:26:00
+categories: cryptography, openssl
+---
+
+PBKDF = Password Based Key Derivation Function
+
+PBKDF is a key derivative function with a sliding computational cost, used to reduce vulnerabilities to brute force attacks.
+
+Basically PBKDF generates a strong hash that can be used to either store password or used to encrypt data.
+
+Basically we could use hashes to store the passwords. Such as `sha256` the password in, store it in some file and when user enters the password, do a `sha256` again and compare both sha and if they equal, allow the user to login / view the disk content / view file and things as such.
+
+However, the growing power of computers make the random hash guesses more probable. Also, the user's weakness in creating a strong password, makes it even more easier for the attacker to guess the password easily.
+
+So, PBKDF and PBKDF2 are created to purposefully slow down the computation with the increased number of guesses. Thus generating the new output hash becomes increasingly difficult, considering the user has limited resources (naive lol).
+
+So, lets get into the coding the PBKDF2 hash using openssl. OpenSSL has support for PBKDF2. Defined in `<openssl/evp.h>`.
+
+```c
+
+int PKCS5_PBKDF2_HMAC(const char *pass, int passlen,
+                       const unsigned char *salt, int saltlen, int iter,
+                       const EVP_MD *digest, int keylen, unsigned char *out);
+
+```
+
+parameters are :
+
+**inputs:**
+
+1. pass - password
+2. passlen - password length
+3. salt - a random salt
+4. saltlen - length of salt
+5. digest - `EVP_sha1`, `EVP_sha256` etc..
+6. keylen - length of the output buffer
+
+**output:**
+7. out - output hash / key
+
+Below is a small snippet of the code demo of the PBKDF2.
+
+```cpp
+/**
+ * @copyright Devendra Naga (devendra.aaru@gmail.com)
+ *
+ * All rights reserved
+ */
+
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+
+class passwd_pbkdf {
+    public:
+        explicit passwd_pbkdf();
+        explicit passwd_pbkdf(const passwd_pbkdf &);
+
+        int generate_storable_pwd(const char *pass,
+                                  int passlen,
+                                  const char *salt,
+                                  int salt_len,
+                                  uint8_t *out,
+                                  int out_size);
+
+        passwd_pbkdf operator=(const passwd_pbkdf &);
+        ~passwd_pbkdf();
+
+    private:
+};
+
+passwd_pbkdf::passwd_pbkdf()
+{
+}
+
+passwd_pbkdf::~passwd_pbkdf()
+{
+}
+
+// per the NIST spec
+#define DEFAULT_ITERS 1000
+
+int passwd_pbkdf::generate_storable_pwd(const char *pass,
+                                        int passlen,
+                                        const char *salt,
+                                        int salt_len,
+                                        uint8_t *out,
+                                        int out_size)
+{
+    int ret;
+
+    ret = PKCS5_PBKDF2_HMAC(pass,
+                            passlen,
+                            (const unsigned char *)salt,
+                            salt_len,
+                            DEFAULT_ITERS,
+                            EVP_sha1(),
+                            out_size,
+                            out);
+    if (ret != 1) {
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    return out_size;
+}
+
+int main()
+{
+    const char *passwd = "llfwkfw9932";
+    const char *salt = "gw#@!";
+    passwd_pbkdf pb;
+    uint8_t out[32];
+    int ret;
+
+    ret = pb.generate_storable_pwd(passwd, strlen(passwd), salt, strlen(passwd), out, sizeof(out));
+    if (ret < 0) {
+        printf("failed to generate storable password\n");
+        return -1;
+    }
+
+    printf("storable password: ");
+    for (int i = 0; i < sizeof(out); i ++) {
+        printf("%02x", out[i]);
+    }
+    printf("\n");
+}
+
+```
+
+
+The disadvantages of above function are,
+
+1. salt is supplied from user
+2. its user responsbility to store the salt somewhere **safe**.
+
+This could be easily avoided with the modified API, by adding the following.
+
+```cpp
+
+uint8_t salt[32];
+int salt_len;
+
+int passwd_pbkdf::salt_gen_and_store()
+{
+    salt_len = RAND_bytes(salt, sizeof(salt));
+    if (salt_len < 0) {
+        std::runtime_error("insufficient entropy");
+    }
+
+    FILE *fp = fopen("../location/only/acceseed/by/keymanager/salt.txt", "w");
+    if (!fp) {
+        return -1;
+    }
+
+    fwrite(salt, sizeof(salt), 1, fp);
+    fflush(fp);
+    fclose(fp);
+
+    return 0;
+}
+
+```
+
+And call, `salt_gen_and_store` implicitly in the constructor.
+
+
+
