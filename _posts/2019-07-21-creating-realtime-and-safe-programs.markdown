@@ -66,7 +66,6 @@ Remember that when using TCP connections, aggregation can happen, thus causing t
 
 5. Always monitor hardware faults. Some hardware could provide fault information via some special protocol, use it and always monitor via the interface. Take necessary action (fallback, shutdown, erase) when a fault is being reported.
 
-
 ### 2. (soft) realtime behavior
 
 1. **NEVER** call `sleep`, `std::chrono::this_thread::sleep_for`. It makes your program to context switch. More over, it again depends on the OS scheduler - it may swap out the program causing it to take time to load again. Rather use OS supported event based system calls to wait on.
@@ -90,4 +89,10 @@ Any particular deadline miss must be logged and all the inputs causing this beha
 7. Tie your serious work thread to one core. This makes OS not to choose the core for thread to execute under some certain conditions. Keeping your thread to one core, removes the swapping of the program between the core and the cache as well.
 
 8. Always align your data to the cache line. The more cache hits your program can perform, the less it require to be able to access from the RAM. RAM is always slower to access than cache.
+
+
+Apart from these, tools that are available at hand, could be used for achieving most (if not all of) of above methods.
+
+1. compilers can determine if you have looping problem, undefined references, stack usage, optimisation etc.
+2. code coverage methods can effectively determine, what part of code is covered and exactly what functions and with lines.
 
