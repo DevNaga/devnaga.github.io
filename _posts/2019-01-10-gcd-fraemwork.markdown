@@ -6,16 +6,18 @@ categories: technology, c++, event driven
 ---
 
 
-[ DRAFT : I am very poor at explaining things. I am still editing this for clear description of what i did.. so come back again for more details of the big 400 line code]
+[ **DRAFT : I am very poor at explaining things. I am still editing this for clear description of what i did.. so come back again for more details of the big 400 line code** ]
 
 I have been trying to make an event driven parallel (atleast with threads if not parallelism) execution layer that can be used by a software program.
 
 The purpose of it is to provide the following methods.
 
-    1. timers
-    2. sockets / file descriptors
-    3. signals
-    4. any execution that required / can be allowed to be run in parallel or in a thread
+1. timers
+2. sockets / file descriptors
+3. signals
+4. any execution that required / can be allowed to be run in parallel or in a thread
+
+A modern software program requires any or all of the above 4 patterns for it to work in a connected and communication environment. Talk about Microservices in cloud, multi process systems (which are msot common) requires any of the above patterns / methods and so this common layer came up.
 
 So i define a singleton class `Gcd` as follows.
 
@@ -92,19 +94,161 @@ Each `Create_Timer_Event` call calls `timerfd_create` and returns a file descrip
 
 Same apply to `Create_Socket_Event` call.
 
-The `Create_Signal_Event` call is different. Because, one or more functions may require one signal
+The `Create_Signal_Event` call is different. Because, one or more functions may depend or use a common signal. So instead of one callback, we have a vector of callbacks.
+
+The `signal_fd` trick
+===================
+
+The thing with the `signalfd` system call is that one process can have many `signalfd` file descriptors it wants - but complicates the handling and masking settings. So i came up with the following setting.
 
 
-So i created a final version with above things in my mind.
+1. empty out signals
+2. create `signalfd`
+3. set to the fdset.
 
-Although my version does not take care of the following, but it fairly works without deep runs.
+A call to the `Create_Signal_Event` is made.
+
+1. reset the `signalfd` from the mask.
+2. pass the previously got fd into the call to `signalfd` system call.
+3. set `sigprocmask` to blocking.
+4. set new fd to fdset.
 
 
-    1. timer may not work if usec is multiples of sec i.e. usec = n * sec. I should do a divide and add to sec and modulo to add to usec.
-    2. lock guarantee in timer when a worker thread in the parallel called.
-    3. thread scheduling is random and thus is not cache friendly and inefficient work distribution among threads.
+Parallel execution
+================
+
+In the cloud or on premise devices we see always there is atleast an intel dual core or an ARM dual core machine or a single core with HT enabled. To exploit multicore some use threads, so to avoid creating threads everytime when a need arise we keep a pool of them.
+
+So the definition of it looks as follows,
+
+
+```cpp
+
+// a process that is instantiated by the Parallel
+class Parallel_Proc {
+    public:
+        explicit Parallel_Proc();
+        ~Parallel_Proc();
+
+        void Queue_Work(Job_Fn job);
+        void Stop()
+        {
+            std::unique_lock<std::mutex> lock(lock_);
+            stop_signal_ = true;
+            printf("Gcd: stop the process\n");
+            cv_.notify_one();
+        }
+
+    private:
+        void Process();
+        std::unique_ptr<std::thread> proc_;
+        std::queue<Job_Fn> jobs_;
+        std::mutex lock_;
+        std::condition_variable cv_;
+        bool stop_signal_ = false;
+};
+
+class Parallel {
+    public:
+        explicit Parallel();
+        ~Parallel();
+
+        void Queue_Work(Job_Fn job);
+        void StopAll()
+        {
+            for (auto it : procs_) {
+                it->Stop();
+            }
+        }
+    private:
+        std::vector<std::shared_ptr<Parallel_Proc>> procs_;
+        int n_threads_;
+};
+
+```
+
+See the `Parallel_Proc` define a thread of execution that is created to execute jobs requsted by the caller. So we wouldn't want the user to manage this and thus the `Parallel` class abstract away the `Parallel_Proc` managing the creation and Queueing and providing simple API that abstract the jobs of all the threads.
+
+my system had 4 threads and thus i create that many instances of `Parallel_Proc` and set `n_threads_` to `std::thread::hardware_concurrency()`.
+
+Each instance then starts a thread that runs the `Process` function. The main logic in this is very important.
+
+1. wait on the condition variable
+2. watch for any work being queued ?
+3. if queued, deque the top and pop it.
+4. execute the work.
+
+the thread also watches if the user initiated a `Gcd` shutdown by invoking the `Terminate()` method. If the bit is being set, then the thread breaks out of the loop and stopping itself.
+
+A sample snippet of it is below.
+
+```cpp
+
+void Parallel_Proc::Process()
+{
+    sigset_t block;
+
+    // block termination signals ..temporarily
+    sigemptyset(&block);
+    sigaddset(&block, SIGINT);
+    sigprocmask(SIG_BLOCK, &block, 0);
+    while (1) {
+        Job_Fn job_to_do = nullptr;
+
+        {
+            std::unique_lock<std::mutex> lock(lock_);
+            cv_.wait(lock);
+            if (stop_signal_) {
+                break;
+            }
+            job_to_do = jobs_.front();
+            jobs_.pop();
+        }
+
+        if (job_to_do)
+            job_to_do();
+    }
+}
+
+```
+
+this also mean that the abstraction `Parallel` would need to schedule a job on particular thread. This can be on the following factors.
+
+
+1. weights based on the time required to run this particular job
+2. simple count based system where assign a counter to each thread and increment it when a work added to the thread queue
+
+for now, we keep things simple and generate a random number between 0 and number of threads created and schedule the work on the thread. I know this results in scheduling inefficiency and so we will improve upon this Gcd implementation in the coming versions.
+
+So my queueing would simply look below.
+
+```cpp
+
+// queue work on a random thread
+void Parallel::Queue_Work(Job_Fn job)
+{
+    int thread_id = rand() % n_threads_;
+
+    procs_[thread_id]->Queue_Work(job);
+}
+
+```
+
+
+
+So i created a final version with all 4 of the above things in my mind.
+
 
 
 Below is the full example of the `Gcd`: <script src="https://gist.github.com/DevNaga/07be345518682e19331e00fa1aeac9ed.js"></script>
 
+
+Some more improvements can be made on the above `Gcd` implementation.
+
+
+1. timer may not work if usec is multiples of sec i.e. usec = n * sec. I should do a divide and add to sec and modulo to add to usec.
+2. lock guarantee in timer when a worker thread in the parallel called.
+3. thread scheduling is random and thus is not cache friendly and inefficient work distribution among threads.
+4. execute timer, socket and signal callbacks in the workers. Signals may not be the right ones to be executed within worker threads however.
+5. block all signals within workers and only allow the main thread handle the signals.
 
