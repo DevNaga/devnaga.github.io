@@ -5,6 +5,9 @@ date:   2019-10-01 23:26:00
 categories: technology, c++, event driven
 ---
 
+
+[ DRAFT : I am very poor at explaining things. I am still editing this for clear description of what i did.. so come back again for more details of the big 400 line code]
+
 I have been trying to make an event driven parallel (atleast with threads if not parallelism) execution layer that can be used by a software program.
 
 The purpose of it is to provide the following methods.
@@ -18,7 +21,6 @@ So i define a singleton class `Gcd` as follows.
 
 ```cpp
 
-// Grand Central Dispatch main class
 class Gcd {
     public:
         static Gcd *Instance()
@@ -47,39 +49,60 @@ class Gcd {
 
         // terminate the wheel
         void Terminate() { terminate_ = true; }
+
     private:
-        // list of timers
-        std::vector<Gcd_Timer> timers_;
-
-        // list of sockets
-        std::vector<Gcd_Socket> sockets_;
-
-        // list of signals
-        std::vector<Gcd_Signal> signals_;
-
-        // parallel context
-        Parallel p_;
-
-        // set to true when Terminate() is called
-        bool terminate_ = false;
-
-        // fd to handle the signals
-        int signal_fd_;
-
-        // maks of all the signals
-        sigset_t signal_masks_;
-
-        // maks of all the fds
-        fd_set allfd_;
-
-        // get allmax fds
-        int get_max_fd_();
-
-        // priovate constructor .. base singleton
         explicit Gcd();
 };
 
 ```
+
+now i have defined the uses of the Gcd as the member function of the above class. Since its a singleton, it can be used anywhere in the program. Thus, if there are mulitple files, the base can be directly used by the single instance.
+
+Lets look at the `Create_Timer_Event`. It accepts 3 parameters namely `sec`, `usec` and `Timer_Fn`.
+
+The first two are the timeouts that caller sets, the `Timer_Fn` is the callback set by the caller, it is to be called when the timer event occur.
+
+Since this is a type `std::function<>`, the caller is flexible to register a callback in a regular function call or a member function can be registered as a callback.
+
+```cpp
+
+class my_class {
+    public:
+        void my_member() { }
+
+        void register_timer() {
+            Timer_Fn f = std::bind(&my_class::my_member, this);
+
+            Gcd::Instance()->Create_Timer_Event(1, 0, f);
+        }
+};
+```
+
+
+For All the timers ,sockets, signals i am using file descriptors. Here's the advantage i have seen with them.
+
+    1. it can be wait on `select` or `pselect` or `poll` or `epoll`
+    2. all events are queued and delivered one by one
+    3. one base function can be used to wait for all the above
+
+
+so, i've chosen `timerfd` calls which are **LINUX only**. Your operating system might have something or other of these, which can be allowed to wait on `select`.
+
+Each `Create_Timer_Event` call calls `timerfd_create` and returns a file descriptor referring to the timer, each call of `Create_Timer_Event` also has a callback that is to be called upon an expiry. So we need to store all this into a structure and store it in a vector. So we have a vector of timers.
+
+Same apply to `Create_Socket_Event` call.
+
+The `Create_Signal_Event` call is different. Because, one or more functions may require one signal
+
+
+So i created a final version with above things in my mind.
+
+Although my version does not take care of the following, but it fairly works without deep runs.
+
+
+    1. timer may not work if usec is multiples of sec i.e. usec = n * sec. I should do a divide and add to sec and modulo to add to usec.
+    2. lock guarantee in timer when a worker thread in the parallel called.
+    3. thread scheduling is random and thus is not cache friendly and inefficient work distribution among threads.
 
 
 Below is the full example of the `Gcd`: <script src="https://gist.github.com/DevNaga/07be345518682e19331e00fa1aeac9ed.js"></script>
