@@ -38,7 +38,7 @@ int sock;
 sock = socket(AF_INET, SOCK_DGRAM, 0);
 ```
 
-1. Getting wireless mode: `SIOCGIWNAME`
+**1. Getting wireless mode: SIOCGIWNAME**
 
     1. Fill in the name 
     2. Perform ioctl
@@ -60,7 +60,7 @@ sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     ```
 
-2. Getting AP name : `SIOCGIWESSID`
+**2. Getting AP name : SIOCGIWESSID**
 
     1. Fill in the name
     2. set memory for essid pointer
@@ -85,7 +85,7 @@ sock = socket(AF_INET, SOCK_DGRAM, 0);
     printf("essid: %s\n", iw.u.essid.pointer);
     ```
 
-3. Getting Wireless frequency : `SIOCGIWFREQ`
+**3. Getting Wireless frequency : SIOCGIWFREQ**
 
     1. Fill in the name
     2. Perform ioctl
@@ -107,7 +107,7 @@ sock = socket(AF_INET, SOCK_DGRAM, 0);
     
     ```
 
-4. Getting AP Rate : `SIOCGIWRATE`
+**4. Getting AP Rate : SIOCGIWRATE**
 
     1. Fill in the name
     2. Perform ioctl
@@ -128,7 +128,7 @@ sock = socket(AF_INET, SOCK_DGRAM, 0);
     printf("rate: %f Mbps\n", (double)iw.u.bitrate.value / 1000000);
     ```
 
-5. Getting AP Mac: `SIOCGIWAP`
+**5. Getting AP Mac: SIOCGIWAP**
 
 
     1. Fill in the name
@@ -152,7 +152,7 @@ sock = socket(AF_INET, SOCK_DGRAM, 0);
                 apmac[0], apmac[1], apmac[2], apmac[3], apmac[4], apmac[5]);            
     ```
 
-6. Getting AP Nickname: `SIOCGIWNICK`
+**6. Getting AP Nickname: SIOCGIWNICK**
 
     1. Fill in the name
     2. Set the essid pointer
