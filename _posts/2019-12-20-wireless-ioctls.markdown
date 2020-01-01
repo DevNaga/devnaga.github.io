@@ -130,6 +130,54 @@ sock = socket(AF_INET, SOCK_DGRAM, 0);
 
 5. Getting AP Mac: `SIOCGIWAP`
 
+
+    1. Fill in the name
+    2. Perform ioctl
+
+    Below is a short example.
+
+    ```c
+    struct iwreq iw;
+    int ret;
+
+    memset(&iw, 0, sizeof(iw));
+    strcpy(iw.ifr_name, "wlan0");
+    ret = ioctl(sock, SIOCGIWAP, &iw);
+    if (ret < 0) {
+        return -1;
+    }
+
+    uint8_t *apmac = iw.u.ap_addr.sa_data;
+    printf("apmac %02x:%02x:%02x:%02x:%02x:%02x\n",
+                apmac[0], apmac[1], apmac[2], apmac[3], apmac[4], apmac[5]);            
+    ```
+
 6. Getting AP Nickname: `SIOCGIWNICK`
+
+    1. Fill in the name
+    2. Set the essid pointer
+    3. Perform ioctl
+
+    ```c
+    struct iwreq iw;
+    int ret;
+
+    memset(&iw, 0, sizeof(iw));
+    strcpy(iw.ifr_name, "wlan0");
+    char nickname[64];
+    iw.u.essid.pointer = nickname;
+    iw.u.essid.length = sizeof(nickname);
+    ret = ioctl(sock, SIOCGIWNICK, &iw);
+    if (ret < 0) {
+        return -1;
+    }
+
+    printf("nickname: %s\n", iw.u.essid.pointer);
+    ```
+
+
+Below is a full working example of the above ioctls. Link with math lib.
+
+<script src="https://gist.github.com/DevNaga/7f0a80d0f185f5dcb6084bf7eae80811.js"></script>
 
 
