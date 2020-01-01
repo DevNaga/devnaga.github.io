@@ -62,9 +62,71 @@ sock = socket(AF_INET, SOCK_DGRAM, 0);
 
 2. Getting AP name : `SIOCGIWESSID`
 
+    1. Fill in the name
+    2. set memory for essid pointer
+    3. Perform ioctl
+
+    Below is a short example.
+
+    ```c
+    struct iwreq iw;
+    int ret;
+    char essid[64];
+
+    memset(&iw, 0, sizeof(iw));
+    strcpy(iw.ifr_name, "wlan0");
+    iw.u.essid.pointer = essid;
+    iw.u.essid.length = sizeof(essid);
+    ret = ioctl(sock, SIOCGIWESSID, &iw);
+    if (ret < 0) {
+        return -1;
+    }
+
+    printf("essid: %s\n", iw.u.essid.pointer);
+    ```
+
 3. Getting Wireless frequency : `SIOCGIWFREQ`
 
+    1. Fill in the name
+    2. Perform ioctl
+
+    Below is a short example.
+
+    ```c
+    struct iwreq iw;
+    int ret;
+    
+    memset(&iw, 0, sizeof(iw));
+    strcpy(iw.ifr_name, "wlan0");
+    ret = ioctl(sock, SIOCGIWFREQ, &iw);
+    if (ret < 0) {
+        return -1;
+    }
+
+    printf("freq: %f\n", (double)iw.u.freq.m / 100000000);
+    
+    ```
+
 4. Getting AP Rate : `SIOCGIWRATE`
+
+    1. Fill in the name
+    2. Perform ioctl
+
+    Below is a short example.
+
+    ```c
+    struct iwreq iw;
+    int ret;
+
+    memset(&iw, 0, sizeof(iw));
+    strcpy(iw.ifr_name, "wlan0");
+    ret = ioctl(sock, SIOCGIWRATE, &iw);
+    if (ret < 0) {
+        return -1;
+    }
+
+    printf("rate: %f Mbps\n", (double)iw.u.bitrate.value / 1000000);
+    ```
 
 5. Getting AP Mac: `SIOCGIWAP`
 
