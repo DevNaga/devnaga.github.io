@@ -6,7 +6,9 @@ categories: technology, c++, event driven
 ---
 
 **Name: Devendra Naga**
-**Email: [mailto](mailto:devendra.aaru@gmail.com)**
+
+**Email: [devendra.aaru@gmail.com](mailto:devendra.aaru@gmail.com)**
+
 **Dated: Oct 01 2019**
 
 
