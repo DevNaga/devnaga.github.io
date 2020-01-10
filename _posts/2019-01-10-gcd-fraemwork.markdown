@@ -5,6 +5,10 @@ date:   2019-10-01 23:26:00
 categories: technology, c++, event driven
 ---
 
+**Name: Devendra Naga**
+**Email: [mailto](mailto:devendra.aaru@gmail.com)**
+**Dated: Oct 01 2019**
+
 
 [ **DRAFT : I am very poor at explaining things. I am still editing this for clear description of what i did.. so come back again for more details of the big 400 line code** ]
 
