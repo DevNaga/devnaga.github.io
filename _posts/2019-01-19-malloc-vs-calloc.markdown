@@ -5,6 +5,13 @@ date:   2019-1-19 23:26:00
 categories: technology, c
 ---
 
+**Devendra Naga**
+
+**Email: [devendra.aaru@gmail.com](devendra.aaru@gmail.com)**
+
+**Dated: 1/19/2019**
+
+
 The C / C++ programming languages provide the memory allocation functions such as `malloc`, `calloc` and `realloc`. Most of the programs does use `malloc` and most of them **never** resets the memory that they allocate.
 
 Example of allocation with `malloc`
