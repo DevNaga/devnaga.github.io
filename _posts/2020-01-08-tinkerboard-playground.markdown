@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "I bought a Tinkerboard"
-date:   2019-1-19 23:26:00
+date:   2020-1-08 23:26:00
 categories: technology,cryptography, c, yocto, android
 ---
 
