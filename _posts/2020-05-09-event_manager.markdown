@@ -88,7 +88,7 @@ The advantages of the Event Manager being that it makes the SOA software more of
 it is being existed in many places and many times - for example [libevent](https://libevent.org/) is one of the most popular event framework for C/ C++ software, used in from embedded systems to a large scale systems.
 
 
-You can look at the demonstrative only (and not meant for direct use !!) example design on the Event Manager implementation [here](http://devnaga.github.io/2019/gcd-fraemwork.html). I called it with name "Grand Central Dispatch" mimic'ing with the apple's GCD framework.
+Generally, This can be implemented in Java, C++ or Rust as so. I have chosen C++ to implement this for no particular reason except to test my skills. You can look at the demonstrative only (and not meant for direct use !!) example design on the Event Manager implementation [here](http://devnaga.github.io/2019/gcd-fraemwork.html). I called it with name "Grand Central Dispatch" mimic'ing with the apple's GCD framework.
 
 
 
