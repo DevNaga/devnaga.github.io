@@ -36,6 +36,8 @@ The framework implemented as a "Event_Manager" class. Has a below set of public 
 2. Create_Socket_Event
 3. Create_Signal_Event
 4. Execute_Work
+5. Loop
+6. Terminate
 
 ```
 
@@ -57,11 +59,36 @@ In either of the cases, we have limitations and some possible fixes.
 
 1. drifts / latencies / reduced throughput and responsiveness - when called from framework directly and if the callbacks consume more time than is expecting. This inturn mean that validating the time it takes for a callback to execute
 and flag the offending callback and stop the program so that the code could be properly altered later point.
-2. more work queued / starvation / delayed execution - 
+2. more work queued / starvation / delayed execution - if there are limited threads within the pool, each might have a queue of pending work to be executed. In such instances, we will see the delayed execution caused by the wait time
+and starvation if thread pool work schedule is not implemented properly.
+
+Generally to solve the work queue and delayed execution, the scheduling policy and scaling is used.
+
+1. scheduling policy - a round robin is a simpler solution to waive off the starvation a bit but would not suffice.
+So generally, each work that is being executed must also have an associated work cost (weight). When scheduling the work item on particular thread, the weights must be checked to see how "loaded"
+the thread is and consider into queueing into the thread will lowest possible load.
+
+2. scaling - this would be an on-demand scaling - for generally cpu intensive applications (video processing, streaming, network data etc) - more threads might need to handle the incoming data work
+in parallel. Generally a threadpool would reserve a particular amount of threads based off of the number of cores the processor has (some has 1 core some has as many as 4). sometimes, the number
+of threads to handle the incoming requests are not enough and will see a responsiveness and performance issues. To overcome it, the threadpool manager, shall continously measure the load on each
+thread and validate under a particular load if the given hard limits are meeting (time of execution to complete, latency in the results of execution). Under conditions of not able to meet such
+deadlines, the threadpool manager, must instanciate more threads and keep monitoring the performance.
 
 
+The "Loop" and "Terminate" are the simplest form of all the other API.
 
-You can look at the demonstrative example design on the Event Manager implementation [here](http://devnaga.github.io/2019/gcd-fraemwork.html). I called it with name "Grand Central Dispatch" mimic'ing with the apple's GCD framework.
+The Loop would act as a waitor for all the above events and acts on them.
+
+1. An event could be a timer event and the action could be calling the corresponding timer callback or scheduling it on the dedicated thread.
+2. An event could be a signal and socket event and the action could be similar to the timer event handling
+
+To break the loop, "Terminate" is used. At any point in the code, calling "Event_Manager::Terminate()" activates the Exit calls which inturn automatically invokes the destructors and stops the Event Manager.
+
+The advantages of the Event Manager being that it makes the SOA software more of event based, it generalizes the framework for every single pattern that require above basic i/o's. This is not something that's totally new,
+it is being existed in many places and many times - for example [libevent](https://libevent.org/) is one of the most popular event framework for C/ C++ software, used in from embedded systems to a large scale systems.
+
+
+You can look at the demonstrative only (and not meant for direct use !!) example design on the Event Manager implementation [here](http://devnaga.github.io/2019/gcd-fraemwork.html). I called it with name "Grand Central Dispatch" mimic'ing with the apple's GCD framework.
 
 
 
