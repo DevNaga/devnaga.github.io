@@ -47,7 +47,7 @@ The following steps are required to perform enablement of TRNG.
 3. Enable TRNG_IER -> Interrupt enable register
 4. check the status of interrupt setting in TRNG_IMR.
 5. in a loop, perform the remaining steps.
-6. check if TRNG_ISR is set, if yes read TRNG_ODATA
+6. check if TRNG_ISR is set, if yes read TRNG_ODATA (4 bytes)
 
 
 Using TRNG
@@ -66,7 +66,7 @@ unsigned int *TRNG_ODATA = (unsigned int *)0x400BC050;
 // enable peripheral clock..
 pmc_enable_periph_clk(ID_TRNG);
 
-// write RNG and last bit set it
+// write RNG and last bit set it.. not writing RNG, will not enable TRNG functionality
 *TRNG_CR = 0x524e4701;
 
 // enable interrupt
@@ -106,7 +106,7 @@ if (trng_read) {
 
 ```
 
-With this thing in mind, we can create a key generation program, and C++ 11 for abstraction with multiple types of the TRNGs. This may be too much in general, there could be only one if not many of these TRNG devices.
+With this thing in mind, we can create a key generation program, and C++ 11 for abstraction with multiple types of the TRNGs. This may be too much in general, there could be only one if not many of these TRNG devices for a particular board / device.
 
 Below program help describe the Key Generation demonstration with the help of TRNG in C++ 11. You would require an Arduino Due (or compatible board with ATSAM3XEA), a USB to micro USB cable and Arduino IDE to compile and re-flash.
 
