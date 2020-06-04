@@ -34,7 +34,7 @@ Some characteristics of this TRNG.
 2. Passed Diehard Random Tests Suite
 3. Provides a 32-bit Random Number Every 84 Clock Cycles
 
-The TRNG generation sequence is shown in the below diagram.
+The TRNG generation sequence is shown in the below diagram. This diagram is taken out of the ATSAM3XEA manual.
 
 
 ![TRNG_Generation](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/TRNG_sequence.png)
