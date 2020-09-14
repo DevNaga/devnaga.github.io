@@ -7,7 +7,7 @@ categories: networking
 
 **ARP** is short name for Address Resolution Protocol. It is used to get mac addresses based on known ip address. Tools like `ping` generally trigger the ARP frames. ARP is required to know the destination mac address so to send an receive any message. ARP operates at the L2 layer.
 
-ARP header looks like the following. [](https://github.com/madmax440/madmax440.github.io/blob/master/_posts/ARP_Header.png)
+ARP header looks like the following. ![ARP_Header](https://raw.githubusercontent.com/madmax440/madmax440.github.io/blob/master/_posts/ARP_Header.png)
 
 Below is the ARP data structure.
 
@@ -28,6 +28,12 @@ struct arp_header {
 };
 
 ```
+
+ARP is initiated based on following conditions:
+
+1. a new device is connected in the network. - device tries to reach the default gateway
+2. a packet needs to be sent to the device or to another device and that L2 destination mac address is not available to fill.
+3. periodic arps - initiated by the router or the default gateway to learn the network devices status
 
 
 Below is some code example i have done for ARP packet serialization and deserialization.
