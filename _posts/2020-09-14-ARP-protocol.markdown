@@ -7,7 +7,7 @@ categories: networking
 
 **ARP** is short name for Address Resolution Protocol. It is used to get mac addresses based on known ip address. Tools like `ping` generally trigger the ARP frames. ARP is required to know the destination mac address so to send an receive any message. ARP operates at the L2 layer.
 
-ARP header looks like the following. ![ARP_Header](https://raw.githubusercontent.com/madmax440/madmax440.github.io/blob/master/_posts/ARP_Header.png)
+ARP header looks like the following. ![ARP_Header](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/ARP_Header.png)
 
 Below is the ARP data structure.
 
