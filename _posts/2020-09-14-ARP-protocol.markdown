@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Networking and Security: ARP"
+title:  "Networking and Security: ARP intro"
 date:   2020-09-14 23:26:00
 categories: networking
 ---
@@ -29,12 +29,29 @@ struct arp_header {
 
 ```
 
+
 ARP is initiated based on following conditions:
 
 1. a new device is connected in the network. - device tries to reach the default gateway
 2. a packet needs to be sent to the device or to another device and that L2 destination mac address is not available to fill.
 3. periodic arps - initiated by the router or the default gateway to learn the network devices status
 
+So this provides us a basic information of IP to mac and vice versa translations. The networking stack keeps an ARP table of learnt addresses so it can set the corresponding mac address in the L2 Ethernet frame.
+
+An example of the ARP table below is as follows.
+
+```c
+
+struct l2_arp_table {
+    uint8_t source_hwaddr[6];
+    uint32_t source_ipaddr;
+    uint8_t target_hwaddr[6];
+    uint32_t target_ipaddr;
+    bool has_response;      // has a valid response
+    timestamp last_updated; // last updated timestamp
+};
+
+```
 
 Below is some code example i have done for ARP packet serialization and deserialization.
 
@@ -329,3 +346,23 @@ Arp: {
 }
 
 ```
+
+the problem here is that a device with sufficient tcp/ip capabilities with a network card, can try to fake in the ARP replies acting as a man-in-the-mdidle faking the actual sender. This is also called ARP spoof.
+
+A simpler way to avoid such spoofs is to use static ARP tables. In general it works in networks where the network configuration never changes. Such as for ex: Automotive networks, data centers (but may not apply for dynamically changing VM instances).
+
+A network filter can be used to perform much more detection capabilities. That will be discussed later in the coming section.
+
+Few of the filter parameters i will be considering next in the implementation of ARP in the network filter:
+
+**deny rules:**
+
+1. if (arp.protocol type != IPv4) && if (arp.hw_addr_len != 6) && if (arp.protocol_addr_len != 4)
+2. (if (arp.op == ARP_Req) || if (arp_op == ARP_Reply) ) && ( if (arp.source_hw_addr == 00-00-00-00-00-00) ||
+                               if (arp.source_hw_addr == FF-FF-FF-FF-FF) ||
+                               if (arp.source_hw_addr_pattern == 01-80-c2)
+                               if (arp.source_proto_addr == 0.0.0.0) )
+3. if (arp.op == ARP_Reply) && !prev_arp_req_rx
+4. if (arp.op == ARP_Reply) && (arp_entry.last_updated - timeout < 0)
+5. if neither (arp.op == ARP_Req) nor (arp.op == ARP_Reply)
+
