@@ -357,6 +357,8 @@ Few of the filter parameters i will be considering next in the implementation of
 
 **deny rules:**
 
+```c
+
 1. if (arp.protocol type != IPv4) && if (arp.hw_addr_len != 6) && if (arp.protocol_addr_len != 4)
 2. (if (arp.op == ARP_Req) || if (arp_op == ARP_Reply) ) && ( if (arp.source_hw_addr == 00-00-00-00-00-00) ||
                                if (arp.source_hw_addr == FF-FF-FF-FF-FF) ||
@@ -366,3 +368,4 @@ Few of the filter parameters i will be considering next in the implementation of
 4. if (arp.op == ARP_Reply) && (arp_entry.last_updated - timeout < 0)
 5. if neither (arp.op == ARP_Req) nor (arp.op == ARP_Reply)
 
+```
