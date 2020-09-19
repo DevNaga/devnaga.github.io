@@ -1,0 +1,444 @@
+---
+layout: post
+title:  "Networking and Security: Part2 -> Crafting ARP packets programmatically"
+date:   2020-09-19 23:26:00
+categories: networking
+---
+
+Lets understand bit deeper doing some analysis on the behavior of network devices. This will help in writing the filter code considering the corner or abnormal cases.
+
+As it is known, the ARP is a layer2 packet and it will be used in an ethernet frame. So basically ARP and Ethernet packets needs to be crafted. Lets look at following structures,
+
+```cpp
+
+// ARP Header
+
+struct arp_header {
+    hardware_type       hw_type;
+    uint16_t            proto_type;
+    uint8_t             hw_addr_len;
+    uint8_t             protocol_addr_len;
+    operation           op;
+    uint8_t             sender_hwaddr[6]; // mac address
+    uint8_t             sender_proto_addr[4]; // ipv4 address
+    uint8_t             target_hwaddr[6]; // mac address
+    uint8_t             target_proto_addr[4]; // ipv4 address
+};
+
+// Ethernet Header
+
+struct ethernet_header {
+    uint8_t dest[6];
+    uint8_t src[6];
+    // if ethertype == 0x8100 -> parse VLAN
+    uint16_t ethertype;
+};
+
+```
+
+Packet format will be as follows,
+
+```
+
+|-----------------|------------|
+| ethernet header | ARP header |
+|-----------------|------------|
+
+```
+
+**ARP Header parameters:**
+
+ARP header is similar for both ARP request and reply and only few parameters will change much.
+
+considering the ARP Header, the following fields can be simulated.
+
+1. sender hardware address
+2. sender ip address
+3. target hardware address
+4. target ip address
+
+Following fields kept as is 
+1. arp.proto_type: IPv4 (0x0800)
+2. hw_addr_len = 6
+3. protocol_addr_len = 4
+4. arp.op = ARP_Request or ARP_Reply -> based on command line interface
+
+**Ethernet Header parameters:**
+
+Following fields kept for Ethernet:
+
+1. any addresses / same addresses for ARP replies - to simulate periodic ARP cache update messages
+2. broadcast destination for ARP requests
+
+**Raw socket Wrapper:**
+
+Finally we require the raw sockets in Linux PC to simulate the over the network packets.
+
+I have written a C++ abstraction for Raw sockets. I will post that in a new chapter but to understand the below code, here is the class definition.
+
+```cpp
+
+class raw_socket {
+    public:
+        explicit raw_socket(const std::string dev, uint16_t ethertype);
+        ~raw_socket();
+
+        int get_socket() const noexcept;
+        int send_msg(uint8_t *mac, uint16_t ethertype, uint8_t *data, size_t data_len) noexcept;
+        int send_msg(uint8_t *dest, uint8_t *data, size_t data_len) noexcept;
+        int recv_msg(uint8_t *mac, uint16_t &ethertype, uint8_t *data, size_t data_len) noexcept;
+        int recv_msg(uint8_t *mac, uint8_t *data, size_t data_len) noexcept;
+    private:
+        int fd_;
+        std::string dev_;
+        int ifindex_;
+        uint8_t devmac_[6];
+        uint16_t ethertype_;
+};
+
+```
+
+Creating Raw sockets:
+
+```cpp
+raw_socket raw("eth0");
+```
+
+send message on raw socket:
+
+```cpp
+uint8_t dest[] = {0x01, 0x02, 0x03, 0x02, 0x03, 0x04};
+const char *data = "sendign packet through raw socket";
+size_t data_len = strlen(data);
+int ret;
+
+ret = raw.send_msg(dest, static_cast<int>(data), data_len);
+if (ret < 0) {
+    return -1;
+}
+
+```
+
+For periodic messaging, i have used Event Manager library i wrote a while ago. More on it is already posted [here](http://madmax440.github.io/2020/event_manager.html). Read through, if interested to know how it works..
+
+
+**The tool:**
+
+With all the interfaces i have now, i programmed the tool as follows. The below code snippet is the one that of importance here.
+
+```cpp
+/**
+ * @brief - implements fake ARP replies
+ * 
+ * @copyright - All rights reserved 2020-present Devendra Naga (devendra.aaru@outlook.com)
+ * 
+ * THIS PROGRAM IS ONLY FOR EDUCATIONAL PURPOSES. DO NOT USE THIS PROGRAM FOR ALL OTHER PURPOSES.
+ */
+
+// milliseconds interval to send ARP replies
+static int interval = 0;
+static int request_only = 0;
+static int replies_only = 0;
+static std::string ifname = "enp2s0";
+static uint32_t fake_ipaddr = 0;
+static uint32_t target_ipaddr = 0;
+static uint8_t fake_mac[6];
+static uint8_t target_mac[6];
+
+// event manager instance
+static auto_os::lib::event_manager *ev_;
+
+namespace auto_os::network {
+
+class fake_arp {
+    public:
+        explicit fake_arp();
+        ~fake_arp();
+
+        void run();
+
+    private:
+        void timer();
+        std::unique_ptr<auto_os::lib::raw_socket> raw_;
+};
+
+void fake_arp::timer()
+{
+    auto_os::network::Arp_Layer arp_l;
+    auto_os::network::Ethernet_Layer eth_l;
+    auto_os::network::arp_header arp_h;
+    auto_os::network::ethernet_header eth_h;
+    uint8_t buf[100];
+    size_t pkt_len = 0;
+    size_t off = 0;
+    int ret;
+
+    off += auto_os::network::eth_hdr_size;
+
+    arp_h.hw_type = hardware_type::eIeee802;
+
+    if (replies_only) {
+        arp_h.op = operation::eArpReply;
+    } else if (request_only) {
+        arp_h.op = operation::eArpRequest;
+    }
+    // ipv4
+    arp_h.proto_type = 0x0800;
+    arp_h.protocol_addr_len = 4;
+    arp_h.hw_addr_len = 6;
+    arp_h.sender_hwaddr[0] = fake_mac[0];
+    arp_h.sender_hwaddr[1] = fake_mac[1];
+    arp_h.sender_hwaddr[2] = fake_mac[2];
+    arp_h.sender_hwaddr[3] = fake_mac[3];
+    arp_h.sender_hwaddr[4] = fake_mac[4];
+    arp_h.sender_hwaddr[5] = fake_mac[5];
+    memcpy(arp_h.sender_proto_addr, &fake_ipaddr, sizeof(fake_ipaddr));
+    arp_h.target_hwaddr[0] = target_mac[0];
+    arp_h.target_hwaddr[1] = target_mac[1];
+    arp_h.target_hwaddr[2] = target_mac[2];
+    arp_h.target_hwaddr[3] = target_mac[3];
+    arp_h.target_hwaddr[4] = target_mac[4];
+    arp_h.target_hwaddr[5] = target_mac[5];
+    memcpy(arp_h.target_proto_addr, &target_ipaddr, sizeof(target_ipaddr));
+
+    ret = arp_l.Serialize(buf, sizeof(buf), off, &arp_h);
+    if (ret < 0) {
+        printf("failed to serialize arp reply\n");
+        return;
+    }
+
+    pkt_len += auto_os::network::arp_hdr_size;
+
+    eth_h.src[0] = fake_mac[0];
+    eth_h.src[1] = fake_mac[1];
+    eth_h.src[2] = fake_mac[2];
+    eth_h.src[3] = fake_mac[3];
+    eth_h.src[4] = fake_mac[4];
+    eth_h.src[5] = fake_mac[5];
+
+    if (request_only) {
+        eth_h.dest[0] = 0xFF;
+        eth_h.dest[1] = 0xFF;
+        eth_h.dest[2] = 0xFF;
+        eth_h.dest[3] = 0xFF;
+        eth_h.dest[4] = 0xFF;
+        eth_h.dest[5] = 0xFF;
+    } else {
+        eth_h.dest[0] = target_mac[0];
+        eth_h.dest[1] = target_mac[1];
+        eth_h.dest[2] = target_mac[2];
+        eth_h.dest[3] = target_mac[3];
+        eth_h.dest[4] = target_mac[4];
+        eth_h.dest[5] = target_mac[5];
+    }
+
+    eth_h.ethertype = 0x0806;
+
+    off = 0;
+
+    ret = eth_l.Serialize(buf, sizeof(buf), off, &eth_h);
+    if (ret < 0) {
+        printf("failed to serialize ethernet header\n");
+        return;
+    }
+
+    pkt_len += auto_os::network::eth_hdr_size;
+
+    ret = raw_->send_msg(target_mac, buf, pkt_len);
+    if (ret < 0) {
+        printf("failed to send message\n");
+        return;
+    }
+
+    printf("sending %u bytes\n", pkt_len);
+}
+```
+
+The main program accepts inputs and parses them via `getopt` C API. An example of it is shown below.
+
+```cpp
+
+
+const std::string notice = "this tool is for LEARNING PURPOSES only! Author is not responsible for ALL the usage of this tool\n.  DO NOT USE THE TOOL FOR ALL OTHER MEANS!\n";
+ 
+void message(const char *name)
+{
+    fprintf(stderr, "%s\n", notice.c_str());
+    fprintf(stderr, "%s -i -R -r -I -f -m -t -T\n"
+                    "-i <interval in msec>\n"
+                    "-r <send arp-replies only>\n"
+                    "-I <interface to send packets in>\n"
+                    "-f <fake ip address as source addr>\n"
+                    "-m <fake mac adress as source mac>\n"
+                    "-t <fake target mac address>\n"
+                    "-T <fake target ip address>\n");
+}
+
+int main(int argc, char **argv)
+{
+    int ret;
+
+    fprintf(stderr, "%s\n", notice.c_str());
+
+    while ((ret = getopt(argc, argv, "i:RrI:f:m:t:T:")) != -1) {
+        switch (ret) {
+            case 'i':
+                interval = std::stoi(optarg);
+            break;
+            case 'R':
+                request_only = 1;
+            break;
+            case 'r':
+                replies_only = 1;
+            break;
+            case 'I':
+                ifname = optarg;
+            break;
+            case 'f': {
+                char *fake_ipaddr_str;
+                struct in_addr addr;
+                int res;
+
+                fake_ipaddr_str = optarg;
+
+                res = inet_aton(fake_ipaddr_str, &addr);
+                if (res == 0) {
+                    printf("invalid ipaddr\n");
+                    return -1;
+                }
+
+                fake_ipaddr = addr.s_addr;
+            }
+            break;
+            case 'm': {
+                uint32_t mac[6];
+                int res;
+
+                res = sscanf(optarg, "%02x-%02x-%02x-%02x-%02x-%02x\n",
+                                    &mac[0], &mac[1],
+                                    &mac[2], &mac[3],
+                                    &mac[4], &mac[5]);
+                if (res != 6) {
+                    return -1;
+                }
+
+                fake_mac[0] = mac[0];
+                fake_mac[1] = mac[1];
+                fake_mac[2] = mac[2];
+                fake_mac[3] = mac[3];
+                fake_mac[4] = mac[4];
+                fake_mac[5] = mac[5];
+            }
+            break;
+            case 't': {
+                char *fake_ipaddr_str;
+                struct in_addr addr;
+                int res;
+
+                fake_ipaddr_str = optarg;
+
+                res = inet_aton(fake_ipaddr_str, &addr);
+                if (res == 0) {
+                    printf("invalid ipaddr\n");
+                    return -1;
+                }
+
+                target_ipaddr = addr.s_addr;
+            }
+            break;
+            case 'T': {
+                uint32_t mac[6];
+                int res;
+
+                res = sscanf(optarg, "%02x-%02x-%02x-%02x-%02x-%02x\n",
+                                    &mac[0], &mac[1],
+                                    &mac[2], &mac[3],
+                                    &mac[4], &mac[5]);
+                if (res != 6) {
+                    return -1;
+                }
+
+                target_mac[0] = mac[0];
+                target_mac[1] = mac[1];
+                target_mac[2] = mac[2];
+                target_mac[3] = mac[3];
+                target_mac[4] = mac[4];
+                target_mac[5] = mac[5];
+            }
+            break;
+            default:
+                message(argv[0]);
+            return -1;
+        }
+    }
+
+    if (argc < 2) {
+        message(argv[0]);
+        return -1;
+    }
+
+    fprintf(stderr, "%s\n", notice.c_str());
+    auto_os::network::fake_arp fa;
+
+    fa.run();
+
+    return 0;
+}
+
+```
+
+A sample run will show,
+
+```sh
+
+build$ ./auto_networking/fake_arp 
+this tool is for LEARNING PURPOSES only! Author is not responsible for ALL the usage of this tool
+.  DO NOT USE THE TOOL FOR ALL OTHER MEANS!
+
+this tool is for LEARNING PURPOSES only! Author is not responsible for ALL the usage of this tool
+.  DO NOT USE THE TOOL FOR ALL OTHER MEANS!
+
+./auto_networking/fake_arp -i -R -r -I -f -m -t -T
+-i <interval in msec>
+-r <send arp-replies only>
+-R <send arp-requests only>
+-I <interface to send packets in>
+-f <fake ip address as source addr>
+-m <fake mac adress as source mac>
+-t <fake target mac address>
+-T <fake target ip address>
+
+```
+
+Few notes:
+
+1. The parameter `-i` can be used to simulate with accuracy of millisecond.
+2. `-r` send only ARP replies
+3. `-I` is network interface shown in `ip` or `ifconfig`. On Linux
+4. `-f` set ip address in arp.sender_ip
+5. `-m` set mac address in arp.sender_mac
+6. `-T` set ip address in arp.target_ip
+7. `-t` set mac address in arp.target_mac
+
+Lets do some sample runs on an ancient TP Link router i use for test purposes.
+
+Below are few of the example simulations
+
+A sample of the simulated ARP request is shown as follows,
+
+![ARP_Request](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/ARP_Request.png)
+
+Lets simulate 1 second packet:
+
+![ARP_Request_1s](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/ARP_Request_At1sec.png)
+
+
+![ARP_Request_1s](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/ARP_Requests_At1sec.png)
+
+Lets simulate a 100ms ARP requests and see how the router responds back..
+
+![ARP_Request_100ms](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/ARP_Request_At100ms.png)
+
+![ARP_Request_100ms_shark](https://raw.githubusercontent.com/DevNaga/devnaga.github.io/master/_posts/ARP_Requests_At100ms.png)
+
+I will keep further research on this topic in coming sections.. stay tuned
