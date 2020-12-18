@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Message passing between threads or between difference classes in C++"
+title:  "Message passing between threads or between different classes in C++"
 date:   2020-12-18 23:26:00
 categories: wireless, linux, programming
 ---
